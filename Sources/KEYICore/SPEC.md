@@ -57,10 +57,12 @@ CI 机器上逐条断言。
   退回默认模板。
 - **HTTP 语义**（`OpenAICompatibleTranslationProvider`）：OpenAI 兼容的 chat completions 调用，
   对 200 但空内容、被 `finish_reason` 截断、非 2xx 分别给出不同错误，不把失败伪装成空译文。
+  macOS 自定义服务显式填写 HTTP 时使用系统 libcurl。HTTPS 请求使用 URLSession 和系统 ATS 策略。
 
 ## 边界
 
-- 只 import Foundation（另有一处 Darwin，在 `TerminalDraftFile`，用 POSIX 文件调用）。**不得**引入 AppKit、SwiftUI、ApplicationServices、Translation、
+- 依赖 Foundation、`TerminalDraftFile` 的 Darwin 文件调用和自定义 HTTP 服务使用的 `KEYIHTTP`。
+  **不得**引入 AppKit、SwiftUI、ApplicationServices、Translation、
   Security —— 一旦引入，`KEYICoreChecks` 就不再能在无界面环境下运行。
 - 不认识「焦点控件」「辅助功能」「快捷键」「设置窗口」这些概念；它只接收结构化请求，返回文本或错误。
 - 不读写偏好与凭据、不写日志、不缓存译文。唯一触碰文件的是调用方显式给出的编辑器草稿路径，且只

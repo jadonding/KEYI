@@ -569,7 +569,7 @@ private struct CloudServiceInline: View {
                     TextField(
                         strings.endpoint,
                         text: $endpointText,
-                        prompt: Text("https://example.com/v1/chat/completions")
+                        prompt: Text("http://127.0.0.1:11434/v1/chat/completions")
                     )
                     .textFieldStyle(.roundedBorder)
                     .labelsHidden()

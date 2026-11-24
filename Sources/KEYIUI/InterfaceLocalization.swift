@@ -182,7 +182,7 @@ struct InterfaceStrings: Sendable {
         isEnglish ? "This provider does not support API configuration" : "当前提供方不支持 API 配置"
     }
     var invalidEndpoint: String {
-        isEnglish ? "Endpoint must be a valid HTTPS URL" : "Endpoint 必须是有效的 HTTPS 地址"
+        isEnglish ? "Enter a valid endpoint URL with a scheme and hostname." : "请输入包含协议和主机名的有效 Endpoint 地址。"
     }
     var missingAPIKey: String { isEnglish ? "API Key is required" : "API Key 不能为空" }
     var missingModel: String { isEnglish ? "Model name is required" : "模型名不能为空" }

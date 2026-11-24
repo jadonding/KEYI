@@ -135,6 +135,28 @@ do {
 } catch TranslationSettingsError.invalidEndpoint {
     expect(true, "非 HTTPS 端点被拒绝")
 }
+for endpoint in [
+    "http://127.0.0.1:11434/v1/chat/completions",
+    "http://models.example.test/v1/chat/completions",
+    "https://models.example.test/v1/chat/completions",
+] {
+    do {
+        try store.saveAPIConfiguration(for: .relay, apiKey: nil, endpoint: endpoint, model: " ")
+        expect(false, "自定义服务仍应校验模型名")
+    } catch TranslationSettingsError.missingModel {
+        expect(true, "自定义服务接受有效的 HTTP 或 HTTPS 端点")
+    } catch {
+        expect(false, "自定义服务应接受 \(endpoint)，实际错误：\(error)")
+    }
+}
+for endpoint in ["http:///v1/chat/completions", "ftp://models.example.test/v1/chat/completions"] {
+    do {
+        try store.saveAPIConfiguration(for: .relay, apiKey: nil, endpoint: endpoint, model: " ")
+        expect(false, "自定义服务应拒绝无效端点")
+    } catch TranslationSettingsError.invalidEndpoint {
+        expect(true, "自定义服务拒绝缺少主机名或协议无效的端点")
+    }
+}
 do {
     try store.saveAPIConfiguration(
         for: .deepSeek,

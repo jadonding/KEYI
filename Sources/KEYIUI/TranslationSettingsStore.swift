@@ -242,9 +242,7 @@ final class TranslationSettingsStore {
               APITranslationProviderCatalog.profile(for: providerID) != nil else {
             throw TranslationSettingsError.unsupportedProvider
         }
-        guard let url = URL(string: endpoint),
-              url.scheme?.lowercased() == "https",
-              url.host != nil else {
+        guard let url = Self.validatedEndpoint(endpoint, for: providerID) else {
             throw TranslationSettingsError.invalidEndpoint
         }
 
@@ -272,9 +270,7 @@ final class TranslationSettingsStore {
     ) async throws -> APIProviderConfiguration {
         guard let account = apiKeyAccount(for: providerID),
               let endpointString = endpoint(for: providerID),
-              let endpoint = URL(string: endpointString),
-              endpoint.scheme?.lowercased() == "https",
-              endpoint.host != nil,
+              let endpoint = Self.validatedEndpoint(endpointString, for: providerID),
               let model = model(for: providerID),
               !model.isEmpty else {
             throw TranslationSettingsError.invalidEndpoint
@@ -292,6 +288,16 @@ final class TranslationSettingsStore {
             endpoint: endpoint,
             model: model
         )
+    }
+
+    private static func validatedEndpoint(_ endpoint: String, for providerID: TranslationProviderID) -> URL? {
+        guard let url = URL(string: endpoint),
+              let host = url.host(), !host.isEmpty,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "https" || (providerID == .relay && scheme == "http") else {
+            return nil
+        }
+        return url
     }
 
     private func persistPreferences() {

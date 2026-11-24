@@ -23,7 +23,12 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "KEYIHTTP",
+            linkerSettings: [.linkedLibrary("curl")]
+        ),
+        .target(
             name: "KEYICore",
+            dependencies: ["KEYIHTTP"],
             exclude: ["SPEC.md"]
         ),
         .target(

@@ -65,12 +65,7 @@ public struct OpenAICompatibleTranslationProvider: TranslationProvider {
     }
 
     private func complete(system: String, user: String, temperature: Double) async throws -> String {
-        var urlRequest = URLRequest(url: endpoint)
-        urlRequest.httpMethod = "POST"
-        urlRequest.timeoutInterval = 45
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        urlRequest.httpBody = try JSONEncoder().encode(
+        let body = try JSONEncoder().encode(
             ChatCompletionRequest(
                 model: model,
                 messages: [
@@ -81,19 +76,16 @@ public struct OpenAICompatibleTranslationProvider: TranslationProvider {
             )
         )
 
-        let (data, response) = try await session.data(for: urlRequest)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APITranslationError.invalidResponse
-        }
+        let (data, statusCode) = try await send(body)
 
-        guard (200..<300).contains(httpResponse.statusCode) else {
+        guard (200..<300).contains(statusCode) else {
             let message = (try? JSONDecoder().decode(
                 APIErrorResponse.self,
                 from: data
             ))?.error?.message
             throw APITranslationError.httpFailure(
                 providerID: id,
-                statusCode: httpResponse.statusCode,
+                statusCode: statusCode,
                 message: message
             )
         }
@@ -120,6 +112,25 @@ public struct OpenAICompatibleTranslationProvider: TranslationProvider {
             throw APITranslationError.emptyResponse(providerID: id)
         }
         return content
+    }
+
+    private func send(_ body: Data) async throws -> (Data, Int) {
+        let timeout: TimeInterval = 45
+        if endpoint.scheme?.lowercased() == "http" {
+            guard id == .relay else { throw URLError(.appTransportSecurityRequiresSecureConnection) }
+            return try await PlainHTTPModelClient.post(to: endpoint, apiKey: apiKey, body: body, timeout: timeout)
+        }
+
+        var request = URLRequest(url: endpoint, timeoutInterval: timeout)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = body
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APITranslationError.invalidResponse
+        }
+        return (data, httpResponse.statusCode)
     }
 }
 
